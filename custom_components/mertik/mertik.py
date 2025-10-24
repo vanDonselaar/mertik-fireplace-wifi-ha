@@ -98,6 +98,10 @@ class Mertik:
         msg = "303303"
         self.__sendCommand(msg)
 
+    @property
+    def is_guard_flame_on(self) -> bool:
+        return self._guard_flame_on
+
     def guard_flame_off(self):
         msg = "313003"
         self.__sendCommand(msg)
@@ -204,11 +208,11 @@ class Mertik:
         tempSub = "0x" + tempSub
         flameHeight = int(tempSub, 0)
 
-        if flameHeight <= 123:
+        if flameHeight <= 116:
             self.flameHeight = 0
             self.on = False
         else:
-            self.flameHeight = round(((flameHeight - 128) / 128) * 12) + 1
+            self.flameHeight = round(((flameHeight - 117) / 138) * 11) + 1
             self.on = True
 
         mode = statusStr[24:25]
@@ -232,12 +236,13 @@ class Mertik:
         # print("Status update!!")
         # print("Fireplace on: " + str(self.on))
         # print("Flame height: " + str(flameHeight))
-        # print("Guard flame on: " + str(guardFlameOn))
-        # print("Igniting: " + str(igniting))
-        # print("Shutting down: " + str(shuttingDown))
-        # print("Aux on: " + str(self.auxOn))
+        # print("Flame height norm: " + str(self.flameHeight))
+        # print("Guard flame on: " + str(self._guard_flame_on))
+        # print("Igniting: " + str(self._igniting))
+        # print("Shutting down: " + str(self._shutting_down))
+        # print("Aux on: " + str(self._aux_on))
         # print("Light on: " + str(self._light_on))
-        # print("Dim level: " + str(self._dim_level))
+        # print("Dim level: " + str(self.))
         #        console.log("Ambient temp: " + ambientTemp)
 
         # opMode = "on"
@@ -261,3 +266,7 @@ class Mertik:
         print("Fire control mode: " + mode)
         print("Operation mode: " + opMode)
 """
+
+# mertik = Mertik('fireplace.home.arpa')
+# print(mertik.flameHeight)
+# print(mertik.standBy())

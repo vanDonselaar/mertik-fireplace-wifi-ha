@@ -25,7 +25,7 @@ class Mertik:
         self.client.connect((self.ip, 2000))
         self.refresh_status()
 
-    def get_devices():
+    def get_devices(self):
         # Setup receiver
         UDP_PORT = 30719
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet  # UDP
@@ -199,7 +199,7 @@ class Mertik:
 
         tempData = str(data, "ascii")
         tempData = tempData[1:]
-        tempData = re.sub("/\r/g", ";", tempData)
+        tempData = re.sub(r"\r", ";", tempData)
         if tempData.startswith(process_status_prefixes):
             self.__processStatus(tempData)
 

@@ -155,6 +155,10 @@ class Mertik:
     def get_flame_height(self) -> int:
         return self.flameHeight
 
+    @property
+    def raw_flame_height(self) -> int:
+        return getattr(self, "_raw_flame_height", 0)
+
     def set_flame_height(self, flame_height) -> None:
         steps = [
             "3830",
@@ -211,13 +215,15 @@ class Mertik:
     def __processStatus(self, statusStr):
         tempSub = statusStr[14:16]
         tempSub = "0x" + tempSub
-        flameHeight = int(tempSub, 0)
+        rawFlameHeight = int(tempSub, 0)
+        self._raw_flame_height = rawFlameHeight
 
-        if flameHeight <= 116:
+        if rawFlameHeight <= 116:
             self.flameHeight = 0
             self.on = False
         else:
-            self.flameHeight = round(((flameHeight - 117) / 138) * 11) + 1
+            # Map the functional range (117-255) to 1-12
+            self.flameHeight = round(((rawFlameHeight - 117) / 138) * 11) + 1
             self.on = True
 
         mode = statusStr[24:25]

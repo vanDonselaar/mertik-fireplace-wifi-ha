@@ -35,6 +35,13 @@ class MertikFlameHeightEntity(CoordinatorEntity, NumberEntity):
     def native_value(self) -> float:
         return self._dataservice.get_flame_height()
 
+    @property
+    def extra_state_attributes(self):
+        """Return entity specific state attributes."""
+        return {
+            "raw_value": self._dataservice.mertik.raw_flame_height
+        }
+
     async def async_set_native_value(self, value: float) -> None:
         await self.hass.async_add_executor_job(self._dataservice.set_flame_height, int(value))
         self.coordinator.async_set_updated_data(None)

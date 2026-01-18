@@ -55,7 +55,7 @@ class MertikOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
     @property
     def icon(self) -> str:
         """Icon of the entity."""
-        return "mdi:fireplace"
+        return "mdi:fireplace" if self.is_on else "mdi:fireplace-off"
 
 class MertikPilotLightSwitchEntity(CoordinatorEntity, SwitchEntity):
     def __init__(self, hass, dataservice, entry_id, name):
@@ -85,7 +85,7 @@ class MertikPilotLightSwitchEntity(CoordinatorEntity, SwitchEntity):
     @property
     def icon(self) -> str:
         """Icon of the entity."""
-        return "mdi:fire"
+        return "mdi:fire" if self.is_on else "mdi:fire-off"
 
 
 class MertikAuxOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
@@ -116,4 +116,4 @@ class MertikAuxOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
     @property
     def icon(self) -> str:
         """Icon of the entity."""
-        return "mdi:numeric-2-box-multiple-outline"
+        return "mdi:numeric-2-box-multiple" if self.is_on else "mdi:numeric-1-box-outline"

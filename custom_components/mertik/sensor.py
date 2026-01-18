@@ -42,3 +42,8 @@ class MertikAmbientTemperatureSensorEntity(CoordinatorEntity, SensorEntity):
     def unit_of_measurement(self) -> str:
         """Return the unit of measurement."""
         return UnitOfTemperature.CELSIUS
+
+    @property
+    def icon(self) -> str:
+        """Return the icon to use in the frontend."""
+        return "mdi:thermometer-lines"

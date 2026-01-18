@@ -45,6 +45,14 @@ class MertikOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
         """Return true if the device is on."""
         return bool(self._dataservice.is_on)
 
+    @property
+    def extra_state_attributes(self):
+        """Return entity specific state attributes."""
+        return {
+            "igniting": self._dataservice.mertik.is_igniting,
+            "shutting_down": self._dataservice.mertik.is_shutting_down,
+        }
+
     async def async_turn_on(self, **kwargs):
         await self.hass.async_add_executor_job(self._dataservice.set_flame_height, 12)
         self.coordinator.async_set_updated_data(None)
@@ -55,7 +63,8 @@ class MertikOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
 
     @property
     def icon(self) -> str:
-        """Icon of the entity."""
+        if self._dataservice.mertik.is_igniting:
+            return "mdi:fire-alert" # Or a pulsing icon
         return "mdi:fireplace" if self.is_on else "mdi:fireplace-off"
 
 class MertikPilotLightSwitchEntity(CoordinatorEntity, SwitchEntity):

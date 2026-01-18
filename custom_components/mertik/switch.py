@@ -46,11 +46,11 @@ class MertikOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs):
         await self.hass.async_add_executor_job(self._dataservice.set_flame_height, 12)
-        await self.coordinator.async_request_refresh()
+        self.coordinator.async_set_updated_data(None)
 
     async def async_turn_off(self, **kwargs):
         await self.hass.async_add_executor_job(self._dataservice.standBy)
-        await self.coordinator.async_request_refresh()
+        self.coordinator.async_set_updated_data(None)
 
     @property
     def icon(self) -> str:
@@ -76,11 +76,11 @@ class MertikPilotLightSwitchEntity(CoordinatorEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs):
         await self.hass.async_add_executor_job(self._dataservice.ignite_fireplace)
-        await self.coordinator.async_request_refresh()
+        self.coordinator.async_set_updated_data(None)
 
     async def async_turn_off(self, **kwargs):
         await self.hass.async_add_executor_job(self._dataservice.guard_flame_off)
-        await self.coordinator.async_request_refresh()
+        self.coordinator.async_set_updated_data(None)
 
     @property
     def icon(self) -> str:
@@ -107,11 +107,11 @@ class MertikAuxOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs):
         await self.hass.async_add_executor_job(self._dataservice.aux_on)
-        await self.coordinator.async_request_refresh()
+        self.coordinator.async_set_updated_data(None)
 
     async def async_turn_off(self, **kwargs):
         await self.hass.async_add_executor_job(self._dataservice.aux_off)
-        await self.coordinator.async_request_refresh()
+        self.coordinator.async_set_updated_data(None)
 
     @property
     def icon(self) -> str:

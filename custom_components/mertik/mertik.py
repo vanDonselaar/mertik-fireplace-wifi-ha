@@ -203,6 +203,11 @@ class Mertik:
         if tempData.startswith(process_status_prefixes):
             self.__processStatus(tempData)
 
+        # Chaining the refresh: If the command we just sent wasn't already a
+        # refresh request, send one now to ensure our internal state is up-to-date.
+        if msg != "303303":
+            self.refresh_status()
+
     def __processStatus(self, statusStr):
         tempSub = statusStr[14:16]
         tempSub = "0x" + tempSub

@@ -53,9 +53,9 @@ class MertikLightEntity(CoordinatorEntity, LightEntity):
             # If no brightness adjustment is requested and the light is off, just turn it on.
             await self.hass.async_add_executor_job(self._dataservice.light_on)
 
-        await self.coordinator.async_request_refresh()
+        self.coordinator.async_set_updated_data(None)
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         await self.hass.async_add_executor_job(self._dataservice.light_off)
-        await self.coordinator.async_request_refresh()
+        self.coordinator.async_set_updated_data(None)

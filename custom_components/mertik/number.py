@@ -41,4 +41,4 @@ class MertikFlameHeightEntity(CoordinatorEntity, NumberEntity):
     @property
     def icon(self) -> str:
         """Icon of the entity."""
-        return "mdi:fire"
+        return "mdi:gas-burner"

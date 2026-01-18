@@ -105,4 +105,4 @@ class MertikAuxOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
     @property
     def icon(self) -> str:
         """Icon of the entity."""
-        return "mdi:light"
+        return "mdi:numeric-2-box-multiple-outline"

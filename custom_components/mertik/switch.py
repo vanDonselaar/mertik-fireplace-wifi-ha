@@ -33,6 +33,7 @@ class MertikOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
         self._dataservice = dataservice
         self._attr_name = name
         self._attr_unique_id = entry_id + "-OnOff"
+        self._attr_device_class = "switch"  # Enables color when ON
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry_id)},
             "name": name,
@@ -63,6 +64,7 @@ class MertikPilotLightSwitchEntity(CoordinatorEntity, SwitchEntity):
         self._dataservice = dataservice
         self._attr_name = name + ' Pilot Light'
         self._attr_unique_id = entry_id + "-PilotLightOnOff"
+        self._attr_device_class = "switch"  # Enables color when ON
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry_id)},
             "name": name,
@@ -94,6 +96,7 @@ class MertikAuxOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
         self._dataservice = dataservice
         self._attr_name = name
         self._attr_unique_id = entry_id + "-AuxOnOff"
+        self._attr_device_class = "switch"  # Enables color when ON
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry_id)},
             "name": name.replace(" Aux", ""),

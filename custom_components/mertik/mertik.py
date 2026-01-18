@@ -223,6 +223,7 @@ class Mertik:
         # Anything <= threshold is "off", threshold + 1 is the first linear step.
         if rawFlameHeight <= self.flame_height_threshold:
             self.flameHeight = 0
+            self.on = False
         else:
             # Map from (threshold + 1) to 255 into the 1-12 scale
             range_min = self.flame_height_threshold + 1

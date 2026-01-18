@@ -6,7 +6,7 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_NAME, CONF_HOST
 import voluptuous as vol
 
-from .const import DOMAIN
+from .const import DOMAIN, CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD
 
 from .mertik import Mertik
 
@@ -27,9 +27,47 @@ class MertikConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(title="Mertik Maxitrol", data=self.data)
 
         DEVICE_SCHEMA = vol.Schema(
-            {vol.Required(CONF_NAME): str, vol.Required(CONF_HOST): str}
+            {
+                vol.Required(CONF_NAME): str,
+                vol.Required(CONF_HOST): str,
+                vol.Optional(CONF_FLAME_HEIGHT_THRESHOLD, default=DEFAULT_FLAME_HEIGHT_THRESHOLD): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=254)
+                ),
+            }
         )
 
         return self.async_show_form(
             step_id="user", data_schema=DEVICE_SCHEMA, errors=errors
         )
+
+    @staticmethod
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return MertikOptionsFlow(config_entry)
+
+
+class MertikOptionsFlow(config_entries.OptionsFlow):
+    """Handle options flow for Mertik."""
+
+    def __init__(self, config_entry):
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input: Optional[Dict[str, Any]] = None):
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        OPTIONS_SCHEMA = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_FLAME_HEIGHT_THRESHOLD,
+                    default=self.config_entry.options.get(
+                        CONF_FLAME_HEIGHT_THRESHOLD,
+                        self.config_entry.data.get(CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD)
+                    ),
+                ): vol.All(vol.Coerce(int), vol.Range(min=0, max=254)),
+            }
+        )
+
+        return self.async_show_form(step_id="init", data_schema=OPTIONS_SCHEMA)

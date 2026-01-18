@@ -18,8 +18,9 @@ process_status_prefixes = ("303030300003", "030300000003")
 
 
 class Mertik:
-    def __init__(self, ip):
+    def __init__(self, ip, flame_height_threshold=116):
         self.ip = ip
+        self.flame_height_threshold = flame_height_threshold
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Internet
         self.client.settimeout(3)
         self.client.connect((self.ip, 2000))
@@ -218,12 +219,22 @@ class Mertik:
         rawFlameHeight = int(tempSub, 0)
         self._raw_flame_height = rawFlameHeight
 
-        if rawFlameHeight <= 116:
+        # Use the calibrated threshold.
+        # Anything <= threshold is "off", threshold + 1 is the first linear step.
+        if rawFlameHeight <= self.flame_height_threshold:
             self.flameHeight = 0
             self.on = False
         else:
-            # Map the functional range (117-255) to 1-12
-            self.flameHeight = round(((rawFlameHeight - 117) / 138) * 11) + 1
+            # Map from (threshold + 1) to 255 into the 1-12 scale
+            range_min = self.flame_height_threshold + 1
+            range_max = 255
+
+            # Ensure we don't divide by zero if threshold is set too high
+            if rawFlameHeight >= range_min:
+                self.flameHeight = round(((rawFlameHeight - range_min) / (range_max - range_min)) * 11) + 1
+            else:
+                self.flameHeight = 1
+
             self.on = True
 
         mode = statusStr[24:25]

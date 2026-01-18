@@ -79,7 +79,7 @@ class MertikConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     def async_get_options_flow(config_entry):
         """Get the options flow for this handler."""
-        return MertikOptionsFlow(config_entry)
+        return MertikOptionsFlow()
 
 
 class MertikOptionsFlow(config_entries.OptionsFlow):

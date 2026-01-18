@@ -53,10 +53,9 @@ class MertikLightEntity(CoordinatorEntity, LightEntity):
             # If no brightness adjustment is requested and the light is off, just turn it on.
             await self.hass.async_add_executor_job(self._dataservice.light_on)
 
-        # Notify Home Assistant that the data has been updated.
-        self._dataservice.async_set_updated_data(None)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         await self.hass.async_add_executor_job(self._dataservice.light_off)
-        self._dataservice.async_set_updated_data(None)
+        await self.coordinator.async_request_refresh()

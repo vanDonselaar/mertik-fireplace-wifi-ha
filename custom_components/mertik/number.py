@@ -37,7 +37,7 @@ class MertikFlameHeightEntity(CoordinatorEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         await self.hass.async_add_executor_job(self._dataservice.set_flame_height, int(value))
-        self._dataservice.async_set_updated_data(None)
+        await self.coordinator.async_request_refresh()
 
     @property
     def icon(self) -> str:

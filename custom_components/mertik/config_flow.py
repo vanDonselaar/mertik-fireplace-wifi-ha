@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_NAME, CONF_HOST
+from homeassistant.helpers import selector
 import voluptuous as vol
 
 from .const import DOMAIN, CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD
@@ -30,14 +31,49 @@ class MertikConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_NAME): str,
                 vol.Required(CONF_HOST): str,
-                vol.Optional(CONF_FLAME_HEIGHT_THRESHOLD, default=DEFAULT_FLAME_HEIGHT_THRESHOLD): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=254)
+                vol.Optional(CONF_FLAME_HEIGHT_THRESHOLD, default=DEFAULT_FLAME_HEIGHT_THRESHOLD): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0,
+                        max=254,
+                        mode=selector.NumberSelectorMode.BOX,
+                    )
                 ),
             }
         )
 
         return self.async_show_form(
             step_id="user", data_schema=DEVICE_SCHEMA, errors=errors
+        )
+
+    async def async_step_reconfigure(self, user_input: Optional[Dict[str, Any]] = None):
+        """Handle reconfiguration of an existing entry."""
+        entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+
+        if user_input is not None:
+            return self.async_update_reload_and_abort(
+                entry,
+                data={**entry.data, **user_input},
+            )
+
+        RECONFIGURE_SCHEMA = vol.Schema(
+            {
+                vol.Required(CONF_NAME, default=entry.data.get(CONF_NAME)): str,
+                vol.Required(CONF_HOST, default=entry.data.get(CONF_HOST)): str,
+                vol.Optional(
+                    CONF_FLAME_HEIGHT_THRESHOLD,
+                    default=entry.data.get(CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0,
+                        max=254,
+                        mode=selector.NumberSelectorMode.BOX,
+                    )
+                ),
+            }
+        )
+
+        return self.async_show_form(
+            step_id="reconfigure", data_schema=RECONFIGURE_SCHEMA
         )
 
     @staticmethod
@@ -66,7 +102,13 @@ class MertikOptionsFlow(config_entries.OptionsFlow):
                         CONF_FLAME_HEIGHT_THRESHOLD,
                         self.config_entry.data.get(CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD)
                     ),
-                ): vol.All(vol.Coerce(int), vol.Range(min=0, max=254)),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0,
+                        max=254,
+                        mode=selector.NumberSelectorMode.BOX,
+                    )
+                ),
             }
         )
 

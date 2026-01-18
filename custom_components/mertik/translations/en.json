@@ -4,10 +4,39 @@
       "user": {
         "data": {
           "name": "Assign name to the fireplace",
-          "host": "IP address of the fireplace controller"
+          "host": "IP address of the fireplace controller",
+          "flame_height_threshold": "[%key:component::mertik::options::step::init::data::flame_height_threshold%]"
+        },
+        "data_description": {
+          "flame_height_threshold": "Raw value at which the flame is considered off. Values at or below this threshold indicate the fireplace is off. Adjust this if your fireplace doesn't turn off at the correct level (typically 116)."
         },
         "description": "Choose device.",
         "title": "Devices"
+      },
+      "reconfigure": {
+        "data": {
+          "name": "Assign name to the fireplace",
+          "host": "IP address of the fireplace controller",
+          "flame_height_threshold": "[%key:component::mertik::options::step::init::data::flame_height_threshold%]"
+        },
+        "data_description": {
+          "flame_height_threshold": "[%key:component::mertik::config::step::user::data_description::flame_height_threshold%]"
+        },
+        "description": "Update your Mertik fireplace configuration.",
+        "title": "Reconfigure Mertik Maxitrol"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "flame_height_threshold": "Flame height threshold"
+        },
+        "data_description": {
+          "flame_height_threshold": "[%key:component::mertik::config::step::user::data_description::flame_height_threshold%]"
+        },
+        "title": "Mertik Maxitrol Options"
       }
     }
   }

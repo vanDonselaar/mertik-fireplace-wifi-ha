@@ -25,6 +25,11 @@ class MertikFlameHeightEntity(CoordinatorEntity, NumberEntity):
         self._attr_native_min_value = 0
         self._attr_native_max_value = 12
         self._attr_unique_id = entry_id + "-FlameHeight"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, entry_id)},
+            "name": name,
+            "manufacturer": "Mertik Maxitrol",
+        }
 
     @property
     def native_value(self) -> float:

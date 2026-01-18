@@ -28,6 +28,11 @@ class MertikAmbientTemperatureSensorEntity(CoordinatorEntity, SensorEntity):
         self._attr_name = name + " Ambient Temperature"
         self._device_class = "temperature"
         self._attr_unique_id = entry_id + "-AmbientTemperature"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, entry_id)},
+            "name": name,
+            "manufacturer": "Mertik Maxitrol",
+        }
 
     @property
     def state(self):

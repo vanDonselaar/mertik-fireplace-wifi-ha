@@ -33,6 +33,11 @@ class MertikOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
         self._dataservice = dataservice
         self._attr_name = name
         self._attr_unique_id = entry_id + "-OnOff"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, entry_id)},
+            "name": name,
+            "manufacturer": "Mertik Maxitrol",
+        }
 
     @property
     def is_on(self):
@@ -58,6 +63,11 @@ class MertikPilotLightSwitchEntity(CoordinatorEntity, SwitchEntity):
         self._dataservice = dataservice
         self._attr_name = name + ' Pilot Light'
         self._attr_unique_id = entry_id + "-PilotLightOnOff"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, entry_id)},
+            "name": name,
+            "manufacturer": "Mertik Maxitrol",
+        }
 
     @property
     def is_on(self):
@@ -84,6 +94,11 @@ class MertikAuxOnOffSwitchEntity(CoordinatorEntity, SwitchEntity):
         self._dataservice = dataservice
         self._attr_name = name
         self._attr_unique_id = entry_id + "-AuxOnOff"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, entry_id)},
+            "name": name.replace(" Aux", ""),
+            "manufacturer": "Mertik Maxitrol",
+        }
 
     @property
     def is_on(self):

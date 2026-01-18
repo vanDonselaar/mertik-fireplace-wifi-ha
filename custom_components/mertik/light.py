@@ -25,6 +25,11 @@ class MertikLightEntity(CoordinatorEntity, LightEntity):
         self._attr_unique_id = entry_id + "-Light"
         self._attr_color_mode = ColorMode.BRIGHTNESS
         self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, entry_id)},
+            "name": name,
+            "manufacturer": "Mertik Maxitrol",
+        }
 
     @property
     def is_on(self):

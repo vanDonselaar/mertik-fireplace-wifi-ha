@@ -16,10 +16,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities(entities)
 
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
-    )
-
 
 class MertikFlameHeightEntity(CoordinatorEntity, NumberEntity):
     def __init__(self, hass, dataservice, entry_id, name):
@@ -35,7 +31,7 @@ class MertikFlameHeightEntity(CoordinatorEntity, NumberEntity):
         return self._dataservice.get_flame_height()
 
     async def async_set_native_value(self, value: float) -> None:
-        await( self.hass.async_add_executor_job(self._dataservice.set_flame_height, int(value)))
+        await self.hass.async_add_executor_job(self._dataservice.set_flame_height, int(value))
         self._dataservice.async_set_updated_data(None)
 
     @property

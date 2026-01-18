@@ -80,4 +80,5 @@ class MertikDataCoordinator(DataUpdateCoordinator):
         return self.mertik.light_brightness
 
     async def _async_update_data(self):
-        self.mertik.refresh_status()
+        """Fetch data from Mertik."""
+        await self.hass.async_add_executor_job(self.mertik.refresh_status)

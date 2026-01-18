@@ -85,10 +85,6 @@ class MertikConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class MertikOptionsFlow(config_entries.OptionsFlow):
     """Handle options flow for Mertik."""
 
-    def __init__(self, config_entry):
-        """Initialize options flow."""
-        self.config_entry = config_entry
-
     async def async_step_init(self, user_input: Optional[Dict[str, Any]] = None):
         """Manage the options."""
         if user_input is not None:

@@ -13,6 +13,9 @@ def mock_coordinator():
     """Return a mock MertikDataCoordinator for entity tests."""
     coordinator = MagicMock()
     coordinator.is_on = False
+    coordinator.is_guard_flame_on = False
+    coordinator.mertik.is_igniting = False
+    coordinator.mertik.is_shutting_down = False
     coordinator.is_aux_on = False
     coordinator.is_light_on = False
     coordinator.light_brightness = 0

@@ -19,6 +19,7 @@ def mock_config_entry_ha():
     entry = MagicMock()
     entry.entry_id = "test_entry_abc"
     entry.data = {"name": "Test Fire", "host": "192.168.1.55"}
+    entry.options = {}
     return entry
 
 
@@ -54,7 +55,22 @@ class TestAsyncSetupEntry:
 
     async def test_creates_mertik_with_host(self, hass, mock_config_entry_ha):
         await async_setup_entry(hass, mock_config_entry_ha)
-        self.mock_mertik_cls.assert_called_once_with("192.168.1.55")
+        self.mock_mertik_cls.assert_called_once_with("192.168.1.55", 116)
+
+    @pytest.mark.parametrize("data,options,expected", [({"flame_height_threshold": 108}, {}, 108), ({"flame_height_threshold": 108}, {"flame_height_threshold": 118}, 118), ({"flame_height_threshold": 108}, {"flame_height_threshold": 0}, 0)])
+    async def test_threshold_precedence(self, hass, mock_config_entry_ha, data, options, expected):
+        mock_config_entry_ha.data.update(data)
+        mock_config_entry_ha.options = options
+        await async_setup_entry(hass, mock_config_entry_ha)
+        self.mock_mertik_cls.assert_called_once_with("192.168.1.55", expected)
+
+    async def test_options_reload_listener(self, hass, mock_config_entry_ha):
+        await async_setup_entry(hass, mock_config_entry_ha)
+        listener = mock_config_entry_ha.add_update_listener.call_args.args[0]
+        mock_config_entry_ha.async_on_unload.assert_called_once_with(mock_config_entry_ha.add_update_listener.return_value)
+        with patch("homeassistant.config_entries.ConfigEntries.async_reload", new_callable=AsyncMock) as reload:
+            await listener(hass, mock_config_entry_ha)
+            reload.assert_called_once_with(mock_config_entry_ha.entry_id)
 
     async def test_stores_coordinator_in_hass_data(self, hass, mock_config_entry_ha):
         await async_setup_entry(hass, mock_config_entry_ha)
@@ -85,6 +101,7 @@ class TestAsyncSetupEntry:
         entry2 = MagicMock()
         entry2.entry_id = "test_entry_xyz"
         entry2.data = {"name": "Second Fire", "host": "192.168.1.56"}
+        entry2.options = {}
         await async_setup_entry(hass, entry2)
 
         assert mock_config_entry_ha.entry_id in hass.data[DOMAIN]

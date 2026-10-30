@@ -19,6 +19,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class MertikAmbientTemperatureSensorEntity(CoordinatorEntity, SensorEntity):
     _attr_has_entity_name = True
     _attr_name = "Ambient Temperature"
+    _attr_icon = "mdi:thermometer-lines"
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
 

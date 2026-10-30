@@ -7,6 +7,7 @@ import pytest
 from custom_components.mertik.switch import (
     MertikOnOffSwitchEntity,
     MertikAuxOnOffSwitchEntity,
+    MertikPilotLightSwitchEntity,
     async_setup_entry,
 )
 from custom_components.mertik.const import DOMAIN
@@ -32,7 +33,7 @@ class TestOnOffSwitch:
         assert switch.has_entity_name is True
 
     def test_icon(self, switch):
-        assert switch.icon == "mdi:fireplace"
+        assert switch.icon == "mdi:fireplace-off"
 
     def test_device_info(self, switch):
         info = switch.device_info
@@ -50,14 +51,16 @@ class TestOnOffSwitch:
 
     async def test_turn_on(self, switch, mock_coordinator):
         await switch.async_turn_on()
-        mock_coordinator.ignite_fireplace.assert_called_once()
-        mock_coordinator.mark_optimistic_on.assert_called_once()
+        mock_coordinator.set_flame_height.assert_called_once_with(12)
+        mock_coordinator.ignite_fireplace.assert_not_called()
+        mock_coordinator.mark_optimistic_on.assert_not_called()
         mock_coordinator.async_set_updated_data.assert_called_once_with(None)
 
     async def test_turn_off(self, switch, mock_coordinator):
         await switch.async_turn_off()
-        mock_coordinator.guard_flame_off.assert_called_once()
-        mock_coordinator.mark_optimistic_off.assert_called_once()
+        mock_coordinator.standBy.assert_called_once()
+        mock_coordinator.guard_flame_off.assert_not_called()
+        mock_coordinator.mark_optimistic_off.assert_not_called()
         mock_coordinator.async_set_updated_data.assert_called_once_with(None)
 
 
@@ -82,7 +85,7 @@ class TestAuxSwitch:
         assert switch.has_entity_name is True
 
     def test_icon(self, switch):
-        assert switch.icon == "mdi:light"
+        assert switch.icon == "mdi:numeric-1-box-outline"
 
     def test_device_info(self, switch):
         info = switch.device_info
@@ -112,15 +115,16 @@ class TestAuxSwitch:
 class TestSwitchPlatformSetup:
     """Test switch platform async_setup_entry."""
 
-    async def test_creates_two_entities(self, hass, mock_coordinator, mock_config_entry):
+    async def test_creates_three_entities(self, hass, mock_coordinator, mock_config_entry):
         hass.data[DOMAIN] = {mock_config_entry.entry_id: mock_coordinator}
         added = []
 
         await async_setup_entry(hass, mock_config_entry, lambda e: added.extend(e))
 
-        assert len(added) == 2
+        assert len(added) == 3
         assert isinstance(added[0], MertikOnOffSwitchEntity)
-        assert isinstance(added[1], MertikAuxOnOffSwitchEntity)
+        assert isinstance(added[1], MertikPilotLightSwitchEntity)
+        assert isinstance(added[2], MertikAuxOnOffSwitchEntity)
 
     async def test_entity_names(self, hass, mock_coordinator, mock_config_entry):
         hass.data[DOMAIN] = {mock_config_entry.entry_id: mock_coordinator}
@@ -128,7 +132,8 @@ class TestSwitchPlatformSetup:
         await async_setup_entry(hass, mock_config_entry, lambda e: added.extend(e))
 
         assert added[0].name is None
-        assert added[1].name == "Aux"
+        assert added[1].name == "Pilot Light"
+        assert added[2].name == "Aux"
 
     async def test_all_entities_share_device(self, hass, mock_coordinator, mock_config_entry):
         hass.data[DOMAIN] = {mock_config_entry.entry_id: mock_coordinator}

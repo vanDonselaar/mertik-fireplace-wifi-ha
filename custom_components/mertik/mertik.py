@@ -3,6 +3,8 @@
 import logging
 import socket
 
+from .const import DEFAULT_FLAME_HEIGHT_THRESHOLD
+
 _LOGGER = logging.getLogger(__name__)
 
 # Protocol framing
@@ -62,7 +64,7 @@ BIT_AUX_ON = 12
 BIT_LIGHT_ON = 13
 
 # Flame height threshold: values at or below this mean the fireplace is off
-FLAME_OFF_THRESHOLD = 123
+FLAME_OFF_THRESHOLD = DEFAULT_FLAME_HEIGHT_THRESHOLD
 
 # Light level range from the device
 DEVICE_LIGHT_MIN = 100
@@ -70,8 +72,9 @@ DEVICE_LIGHT_MAX = 251
 
 
 class Mertik:
-    def __init__(self, ip):
+    def __init__(self, ip, flame_height_threshold=DEFAULT_FLAME_HEIGHT_THRESHOLD):
         self.ip = ip
+        self.flame_height_threshold = flame_height_threshold
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.settimeout(SOCKET_TIMEOUT)
         self.client.connect((self.ip, TCP_PORT))
@@ -123,6 +126,10 @@ class Mertik:
     def guard_flame_off(self):
         self._send_command(CMD_GUARD_FLAME_OFF)
 
+    @property
+    def is_guard_flame_on(self) -> bool:
+        return self._guard_flame_on
+
     def light_on(self):
         self._send_command(CMD_LIGHT_ON)
 
@@ -153,13 +160,16 @@ class Mertik:
     def get_flame_height(self) -> int:
         return self.flameHeight
 
+    @property
+    def raw_flame_height(self) -> int:
+        return getattr(self, "_raw_flame_height", 0)
+
     def set_flame_height(self, flame_height) -> None:
         if flame_height == 0:
             self.standBy()
             return
         step_code = FLAME_HEIGHT_STEPS[flame_height - 1]
         self._send_command(f"{CMD_FLAME_PREFIX}{step_code}{CMD_FLAME_SUFFIX}")
-        self.refresh_status()
 
     def _hex_to_bin(self, hex_str):
         return format(int(hex_str, 16), "b").zfill(8)
@@ -195,14 +205,24 @@ class Mertik:
         if response.startswith(STATUS_PREFIXES):
             self._process_status(response)
 
+        # Commands often acknowledge without status; fetch the reported state.
+        if msg != CMD_REFRESH_STATUS:
+            self.refresh_status()
+
     def _process_status(self, status_str):
         raw_flame = int(status_str[STATUS_FLAME_HEIGHT], 16)
+        self._raw_flame_height = raw_flame
 
-        if raw_flame <= FLAME_OFF_THRESHOLD:
+        threshold = getattr(self, "flame_height_threshold", FLAME_OFF_THRESHOLD)
+        if raw_flame <= threshold:
             self.flameHeight = 0
             self.on = False
         else:
-            self.flameHeight = round(((raw_flame - 128) / 128) * 12) + 1
+            range_min = threshold + 1
+            self.flameHeight = (
+                round(((raw_flame - range_min) / (255 - range_min)) * 11) + 1
+                if range_min < 255 else 1
+            )
             self.on = True
 
         status_bits = status_str[STATUS_BITS]

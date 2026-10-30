@@ -1,37 +1,60 @@
-import logging
-import socket
+"""Configure Mertik connectivity and fireplace-specific flame calibration."""
 
-from typing import Any, Dict, Optional
+import socket
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_NAME, CONF_HOST
+from homeassistant.core import callback
+from homeassistant.helpers import selector
 import voluptuous as vol
 
-from .const import DOMAIN
+from .const import DOMAIN, CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD
 
-_LOGGER = logging.getLogger(__name__)
 
-DEVICE_SCHEMA = vol.Schema(
-    {vol.Required(CONF_NAME): str, vol.Required(CONF_HOST): str}
-)
+def _threshold_selector():
+    return selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=0, max=254, step=1, mode=selector.NumberSelectorMode.BOX
+        )
+    )
+
+
+def _device_schema(data=None, threshold=DEFAULT_FLAME_HEIGHT_THRESHOLD):
+    data = data or {}
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_NAME, **({"default": data[CONF_NAME]} if CONF_NAME in data else {})
+            ): str,
+            vol.Required(
+                CONF_HOST, **({"default": data[CONF_HOST]} if CONF_HOST in data else {})
+            ): str,
+            vol.Optional(
+                CONF_FLAME_HEIGHT_THRESHOLD, default=threshold
+            ): _threshold_selector(),
+        }
+    )
+
+
+DEVICE_SCHEMA = _device_schema()
 
 
 class MertikConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Mertik config flow."""
 
-    async def async_step_user(self, device_input: Optional[Dict[str, Any]] = None):
-        """Invoked when a user initiates a flow via the user interface."""
-        errors: Dict[str, str] = {}
+    async def async_step_user(self, device_input=None):
+        errors = {}
         if device_input is not None:
             host = device_input[CONF_HOST]
-
             await self.async_set_unique_id(host)
             self._abort_if_unique_id_configured()
-
-            can_connect = await self.hass.async_add_executor_job(
-                _test_connection, host
-            )
-            if not can_connect:
+            # Vincent's older entries predate host-based unique IDs.
+            if any(
+                entry.data.get(CONF_HOST) == host
+                for entry in self._async_current_entries()
+            ):
+                return self.async_abort(reason="already_configured")
+            if not await self.hass.async_add_executor_job(_test_connection, host):
                 errors["base"] = "cannot_connect"
             else:
                 return self.async_create_entry(
@@ -40,6 +63,71 @@ class MertikConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user", data_schema=DEVICE_SCHEMA, errors=errors
+        )
+
+    async def async_step_reconfigure(self, user_input=None):
+        entry = self._get_reconfigure_entry()
+        threshold = entry.options.get(
+            CONF_FLAME_HEIGHT_THRESHOLD,
+            entry.data.get(CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD),
+        )
+        errors = {}
+        if user_input is not None:
+            host = user_input[CONF_HOST]
+            if any(
+                other.entry_id != entry.entry_id
+                and (other.data.get(CONF_HOST) == host or other.unique_id == host)
+                for other in self._async_current_entries()
+            ):
+                return self.async_abort(reason="already_configured")
+            if not await self.hass.async_add_executor_job(_test_connection, host):
+                errors["base"] = "cannot_connect"
+            else:
+                options = dict(entry.options)
+                # An old option must not silently mask an explicit reconfigure edit.
+                if CONF_FLAME_HEIGHT_THRESHOLD in options:
+                    options[CONF_FLAME_HEIGHT_THRESHOLD] = user_input[
+                        CONF_FLAME_HEIGHT_THRESHOLD
+                    ]
+                return self.async_update_reload_and_abort(
+                    entry,
+                    unique_id=host,
+                    data={**entry.data, **user_input},
+                    options=options,
+                )
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=_device_schema(entry.data, threshold),
+            errors=errors,
+        )
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        return MertikOptionsFlow()
+
+
+class MertikOptionsFlow(config_entries.OptionsFlow):
+    """Edit flame calibration without changing connection settings."""
+
+    async def async_step_init(self, user_input=None):
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+        threshold = self.config_entry.options.get(
+            CONF_FLAME_HEIGHT_THRESHOLD,
+            self.config_entry.data.get(
+                CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD
+            ),
+        )
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_FLAME_HEIGHT_THRESHOLD, default=threshold
+                    ): _threshold_selector(),
+                }
+            ),
         )
 
 

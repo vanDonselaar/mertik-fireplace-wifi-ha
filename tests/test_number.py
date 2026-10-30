@@ -30,7 +30,7 @@ class TestFlameHeightEntity:
         assert number.has_entity_name is True
 
     def test_icon(self, number):
-        assert number.icon == "mdi:fire"
+        assert number.icon == "mdi:gas-burner"
 
     def test_device_info(self, number):
         info = number.device_info
@@ -39,10 +39,14 @@ class TestFlameHeightEntity:
         assert info["manufacturer"] == "Mertik Maxitrol"
 
     def test_min_value(self, number):
-        assert number.native_min_value == 1
+        assert number.native_min_value == 0
 
     def test_max_value(self, number):
         assert number.native_max_value == 12
+
+    def test_raw_value_attribute(self, number, mock_coordinator):
+        mock_coordinator.mertik.raw_flame_height = 117
+        assert number.extra_state_attributes == {"raw_value": 117}
 
     def test_native_value(self, number, mock_coordinator):
         mock_coordinator.get_flame_height.return_value = 7

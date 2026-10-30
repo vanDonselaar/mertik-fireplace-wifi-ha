@@ -40,11 +40,11 @@ class TestStatusParsing:
         assert device.get_flame_height() == 0
 
     def test_fireplace_on_when_flame_height_high(self, mock_socket):
-        """Flame height > 123 means on. 0x80=128 -> height=1."""
+        """With threshold 116, raw 128 maps to calibrated height 2."""
         mock_socket.recv.return_value = _build_status_bytes(flame_height=0x80)
         device = Mertik("192.168.1.100")
         assert device.is_on is True
-        assert device.get_flame_height() == 1
+        assert device.get_flame_height() == 2
 
     def test_flame_height_mid_range(self, mock_socket):
         """0xC0=192 -> round(((192-128)/128)*12)+1 = 7."""
@@ -54,16 +54,16 @@ class TestStatusParsing:
         assert device.get_flame_height() == 7
 
     def test_flame_height_max(self, mock_socket):
-        """0xFF=255 -> round(((255-128)/128)*12)+1 = 13."""
+        """The calibrated maximum is 12, matching the exposed range."""
         mock_socket.recv.return_value = _build_status_bytes(flame_height=0xFF)
         device = Mertik("192.168.1.100")
         assert device.is_on is True
-        # round(((255-128)/128)*12) + 1 = round(11.90625) + 1 = 12 + 1 = 13
-        assert device.get_flame_height() == 13
+        # Vincent calibration maps raw 255 to the maximum exposed step.
+        assert device.get_flame_height() == 12
 
     def test_flame_height_boundary(self, mock_socket):
-        """0x7B=123 is the boundary - still off."""
-        mock_socket.recv.return_value = _build_status_bytes(flame_height=0x7B)
+        """116 is the calibrated off boundary; 117 is a real low flame."""
+        mock_socket.recv.return_value = _build_status_bytes(flame_height=116)
         device = Mertik("192.168.1.100")
         assert device.is_on is False
 
@@ -165,61 +165,61 @@ class TestCommands:
         mock_socket.send.reset_mock()
         mertik_device.standBy()
         expected = bytearray.fromhex(send_command_prefix + "3136303003")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_ignite_sends_correct_command(self, mertik_device, mock_socket):
         mock_socket.send.reset_mock()
         mertik_device.ignite_fireplace()
         expected = bytearray.fromhex(send_command_prefix + "314103")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_aux_on_sends_correct_command(self, mertik_device, mock_socket):
         mock_socket.send.reset_mock()
         mertik_device.aux_on()
         expected = bytearray.fromhex(send_command_prefix + "32303031030a")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_aux_off_sends_correct_command(self, mertik_device, mock_socket):
         mock_socket.send.reset_mock()
         mertik_device.aux_off()
         expected = bytearray.fromhex(send_command_prefix + "32303030030a")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_light_on_sends_correct_command(self, mertik_device, mock_socket):
         mock_socket.send.reset_mock()
         mertik_device.light_on()
         expected = bytearray.fromhex(send_command_prefix + "3330303103")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_light_off_sends_correct_command(self, mertik_device, mock_socket):
         mock_socket.send.reset_mock()
         mertik_device.light_off()
         expected = bytearray.fromhex(send_command_prefix + "3330303003")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_refresh_status_sends_correct_command(self, mertik_device, mock_socket):
         mock_socket.send.reset_mock()
         mertik_device.refresh_status()
         expected = bytearray.fromhex(send_command_prefix + "303303")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_guard_flame_off_sends_correct_command(self, mertik_device, mock_socket):
         mock_socket.send.reset_mock()
         mertik_device.guard_flame_off()
         expected = bytearray.fromhex(send_command_prefix + "313003")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_set_eco_sends_correct_command(self, mertik_device, mock_socket):
         mock_socket.send.reset_mock()
         mertik_device.set_eco()
         expected = bytearray.fromhex(send_command_prefix + "4233303103")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_set_manual_sends_correct_command(self, mertik_device, mock_socket):
         mock_socket.send.reset_mock()
         mertik_device.set_manual()
         expected = bytearray.fromhex(send_command_prefix + "423003")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
 
 class TestFlameHeight:
@@ -258,28 +258,28 @@ class TestLightBrightness:
         mock_socket.send.reset_mock()
         mertik_device.set_light_brightness(255)
         expected = bytearray.fromhex(send_command_prefix + "33304645464203")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_brightness_min(self, mertik_device, mock_socket):
         """Brightness 1 -> device code 3633."""
         mock_socket.send.reset_mock()
         mertik_device.set_light_brightness(1)
         expected = bytearray.fromhex(send_command_prefix + "33304645363303")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_brightness_mid(self, mertik_device, mock_socket):
         """brightness=128 -> normalized=50 -> l=40 -> l+=1=41 -> code '4141'."""
         mock_socket.send.reset_mock()
         mertik_device.set_light_brightness(128)
         expected = bytearray.fromhex(send_command_prefix + "33304645414103")
-        mock_socket.send.assert_called_with(expected)
+        assert mock_socket.send.call_args_list[0] == call(expected)
 
     def test_brightness_skip_40(self, mertik_device, mock_socket):
         """When l reaches 40, it skips to 41 (the skip-40 quirk)."""
         # brightness where normalized=50 -> l=36+round(4.0)=40 -> 40>=40 -> l=41
         mock_socket.send.reset_mock()
         mertik_device.set_light_brightness(128)
-        cmd_bytes = mock_socket.send.call_args[0][0]
+        cmd_bytes = mock_socket.send.call_args_list[0].args[0]
         cmd_hex = cmd_bytes.hex()
         # The device code is after "33304645" prefix, extract it
         payload = cmd_hex[len(send_command_prefix):]
@@ -294,7 +294,7 @@ class TestLightBrightness:
         # b=96: normalized=(95/254)*100=37.40, l=36+round(2.99)=36+3=39
         mock_socket.send.reset_mock()
         mertik_device.set_light_brightness(96)
-        cmd_bytes = mock_socket.send.call_args[0][0]
+        cmd_bytes = mock_socket.send.call_args_list[0].args[0]
         payload = cmd_bytes.hex()[len(send_command_prefix):]
         device_code = payload[8:12]
         assert device_code == "3939"  # 39 (no skip applied)
@@ -304,7 +304,7 @@ class TestLightBrightness:
         # normalized=(253/254)*100=99.6, l=36+round(7.97)=36+8=44, >=40 so l=45
         mock_socket.send.reset_mock()
         mertik_device.set_light_brightness(254)
-        cmd_bytes = mock_socket.send.call_args[0][0]
+        cmd_bytes = mock_socket.send.call_args_list[0].args[0]
         payload = cmd_bytes.hex()[len(send_command_prefix):]
         device_code = payload[8:12]
         assert device_code == "4545"  # 45
@@ -314,7 +314,7 @@ class TestLightBrightness:
         # normalized=(1/254)*100=0.394, l=36+round(0.031)=36+0=36
         mock_socket.send.reset_mock()
         mertik_device.set_light_brightness(2)
-        cmd_bytes = mock_socket.send.call_args[0][0]
+        cmd_bytes = mock_socket.send.call_args_list[0].args[0]
         payload = cmd_bytes.hex()[len(send_command_prefix):]
         device_code = payload[8:12]
         assert device_code == "3636"  # 36 (no skip)

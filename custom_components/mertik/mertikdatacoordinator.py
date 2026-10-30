@@ -55,6 +55,13 @@ class MertikDataCoordinator(DataUpdateCoordinator):
     def ignite_fireplace(self):
         self.mertik.ignite_fireplace()
 
+    @property
+    def is_guard_flame_on(self) -> bool:
+        return self.mertik.is_guard_flame_on
+
+    def standBy(self):
+        self.mertik.standBy()
+
     def guard_flame_off(self):
         self._optimistic_on_until = None
         self._optimistic_off_until = None

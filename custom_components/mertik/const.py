@@ -1,1 +1,3 @@
 DOMAIN = "mertik"
+CONF_FLAME_HEIGHT_THRESHOLD = "flame_height_threshold"
+DEFAULT_FLAME_HEIGHT_THRESHOLD = 116

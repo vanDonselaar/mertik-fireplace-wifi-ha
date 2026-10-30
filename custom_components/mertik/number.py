@@ -17,8 +17,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class MertikFlameHeightEntity(CoordinatorEntity, NumberEntity):
     _attr_has_entity_name = True
     _attr_name = "Flame Height"
-    _attr_icon = "mdi:fire"
-    _attr_native_min_value = 1
+    _attr_icon = "mdi:gas-burner"
+    _attr_native_min_value = 0
     _attr_native_max_value = 12
 
     def __init__(self, dataservice, entry_id, device_name):
@@ -34,6 +34,10 @@ class MertikFlameHeightEntity(CoordinatorEntity, NumberEntity):
     @property
     def native_value(self) -> float:
         return self._dataservice.get_flame_height()
+
+    @property
+    def extra_state_attributes(self):
+        return {"raw_value": self._dataservice.mertik.raw_flame_height}
 
     async def async_set_native_value(self, value: float) -> None:
         await self.hass.async_add_executor_job(self._dataservice.set_flame_height, int(value))

@@ -1,50 +1,58 @@
+import logging
+
 from homeassistant import config_entries, core
-
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-
-from homeassistant.exceptions import ConfigEntryAuthFailed, Unauthorized
-
-from .const import DOMAIN, CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD
-
 from homeassistant.const import CONF_HOST
+from homeassistant.exceptions import ConfigEntryNotReady
 
+from .const import CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD, DOMAIN
 from .mertik import Mertik
-
 from .mertikdatacoordinator import MertikDataCoordinator
+
+_LOGGER = logging.getLogger(__name__)
+
+PLATFORMS = ["switch", "number", "sensor", "light"]
 
 
 async def async_setup_entry(
     hass: core.HomeAssistant, entry: config_entries.ConfigEntry
 ) -> bool:
     """Set up the Mertik component."""
-    # Get threshold from options, fallback to data, then to default
     threshold = entry.options.get(
         CONF_FLAME_HEIGHT_THRESHOLD,
-        entry.data.get(CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD)
+        entry.data.get(CONF_FLAME_HEIGHT_THRESHOLD, DEFAULT_FLAME_HEIGHT_THRESHOLD),
     )
-
-    mertik = Mertik(entry.data[CONF_HOST], threshold)
+    try:
+        mertik = await hass.async_add_executor_job(Mertik, entry.data[CONF_HOST], threshold)
+    except Exception as err:
+        raise ConfigEntryNotReady(
+            f"Unable to connect to fireplace at {entry.data[CONF_HOST]}"
+        ) from err
 
     coordinator = MertikDataCoordinator(hass, mertik)
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # Forward to all platforms at once
-    await hass.config_entries.async_forward_entry_setups(
-        entry, ["switch", "sensor", "light", "number"]
-    )
-
-    # Register update listener for options changes
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
 
 
-async def async_reload_entry(hass: core.HomeAssistant, entry: config_entries.ConfigEntry) -> None:
-    """Reload the config entry when options change."""
+async def async_reload_entry(hass, entry):
+    """Apply calibration options by reloading the config entry."""
     await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
     return True
+
+
+async def async_unload_entry(
+    hass: core.HomeAssistant, entry: config_entries.ConfigEntry
+) -> bool:
+    """Unload a config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
+    return unload_ok

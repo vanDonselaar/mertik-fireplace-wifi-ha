@@ -1,12 +1,16 @@
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-
+from datetime import timedelta
 import logging
 
-_LOGGER = logging.getLogger(__name__)
-
-from datetime import timedelta
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .mertik import Mertik
+
+
+_LOGGER = logging.getLogger(__name__)
+OPTIMISTIC_ON_SECONDS = 20
+OPTIMISTIC_OFF_SECONDS = 20
 
 
 class MertikDataCoordinator(DataUpdateCoordinator):
@@ -22,22 +26,45 @@ class MertikDataCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=10),
         )
         self.mertik = mertik
+        self._optimistic_on_until = None
+        self._optimistic_off_until = None
 
     @property
     def is_on(self) -> bool:
-        return self.mertik.is_on or self.mertik.is_igniting
+        now = dt_util.utcnow()
+        if self._optimistic_off_until is not None and now < self._optimistic_off_until:
+            return False
+        if self.mertik.is_on or self.mertik.is_igniting:
+            return True
+        if self._optimistic_on_until is None:
+            return False
+        return now < self._optimistic_on_until
+
+    def mark_optimistic_on(self) -> None:
+        self._optimistic_off_until = None
+        self._optimistic_on_until = dt_util.utcnow() + timedelta(
+            seconds=OPTIMISTIC_ON_SECONDS
+        )
+
+    def mark_optimistic_off(self) -> None:
+        self._optimistic_on_until = None
+        self._optimistic_off_until = dt_util.utcnow() + timedelta(
+            seconds=OPTIMISTIC_OFF_SECONDS
+        )
+
+    def ignite_fireplace(self):
+        self.mertik.ignite_fireplace()
 
     @property
     def is_guard_flame_on(self) -> bool:
         return self.mertik.is_guard_flame_on
 
-    def ignite_fireplace(self):
-        self.mertik.ignite_fireplace()
-
     def standBy(self):
         self.mertik.standBy()
 
     def guard_flame_off(self):
+        self._optimistic_on_until = None
+        self._optimistic_off_until = None
         self.mertik.guard_flame_off()
 
     @property
@@ -80,5 +107,7 @@ class MertikDataCoordinator(DataUpdateCoordinator):
         return self.mertik.light_brightness
 
     async def _async_update_data(self):
-        """Fetch data from Mertik."""
-        await self.hass.async_add_executor_job(self.mertik.refresh_status)
+        try:
+            await self.hass.async_add_executor_job(self.mertik.refresh_status)
+        except Exception as err:
+            raise UpdateFailed(f"Error communicating with fireplace: {err}") from err

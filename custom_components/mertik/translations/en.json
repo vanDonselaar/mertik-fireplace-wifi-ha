@@ -5,38 +5,44 @@
         "data": {
           "name": "Assign name to the fireplace",
           "host": "IP address of the fireplace controller",
-          "flame_height_threshold": "[%key:component::mertik::options::step::init::data::flame_height_threshold%]"
-        },
-        "data_description": {
-          "flame_height_threshold": "Raw value at which the flame is considered off. Values at or below this threshold indicate the fireplace is off. Adjust this if your fireplace doesn't turn off at the correct level (typically 116)."
+          "flame_height_threshold": "Flame height off threshold"
         },
         "description": "Choose device.",
-        "title": "Devices"
+        "title": "Devices",
+        "data_description": {
+          "flame_height_threshold": "Raw values at or below this value are off. Default: 116; range: 0\u2013254."
+        }
       },
       "reconfigure": {
+        "title": "Reconfigure fireplace",
         "data": {
-          "name": "Assign name to the fireplace",
+          "name": "Fireplace name",
           "host": "IP address of the fireplace controller",
-          "flame_height_threshold": "[%key:component::mertik::options::step::init::data::flame_height_threshold%]"
+          "flame_height_threshold": "Flame height off threshold"
         },
         "data_description": {
-          "flame_height_threshold": "[%key:component::mertik::config::step::user::data_description::flame_height_threshold%]"
-        },
-        "description": "Update your Mertik fireplace configuration.",
-        "title": "Reconfigure Mertik Maxitrol"
+          "flame_height_threshold": "Raw values at or below this value are off. Default: 116; range: 0\u2013254."
+        }
       }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the fireplace. Please check the IP address and ensure the device is powered on."
+    },
+    "abort": {
+      "already_configured": "This fireplace is already configured.",
+      "reconfigure_successful": "Fireplace configuration updated."
     }
   },
   "options": {
     "step": {
       "init": {
+        "title": "Flame calibration",
         "data": {
-          "flame_height_threshold": "Flame height threshold"
+          "flame_height_threshold": "Flame height off threshold"
         },
         "data_description": {
-          "flame_height_threshold": "[%key:component::mertik::config::step::user::data_description::flame_height_threshold%]"
-        },
-        "title": "Mertik Maxitrol Options"
+          "flame_height_threshold": "Raw values at or below this value are off. Default: 116; range: 0\u2013254."
+        }
       }
     }
   }

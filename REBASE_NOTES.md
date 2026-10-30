@@ -5,7 +5,7 @@
 - Upstream: `jkfran/mertik-fireplace-wifi-ha` `main` at `ca9abc51e62cc39736333600baca0cefe4be6347` (fresh `git fetch upstream` confirmed this tip).
 - Original Vincent fork: `origin/main` at `ce4160d19c02be447e7906188f487d68ce801f63`.
 - Shared base: `6859c22f75e9a2969d92883235a7f5ce9970365f`.
-- Result branch: `rebase/jkfran-main`, based directly on the upstream tip. Local only: no push, PR, Home Assistant changes, or physical fireplace commands.
+- Result branch: `rebase/jkfran-main`, based on the upstream tip with the original fork history subsequently joined without changing the tested code tree. Published as a review branch; `main` and Home Assistant remain unchanged. No physical fireplace commands were sent.
 
 ## Replay method and deviations
 
@@ -14,6 +14,7 @@ An actual 17-commit `git rebase --onto` was attempted first. The first commit pr
 - `4e320ad`: targeted zero-flame regression and fix, before the feature replay.
 - `ca8b14e`: consolidated feature replay and regression coverage.
 - Original intermediate UI fixes and reversions are represented by their final behavior, not separate rebased commits.
+- After review, an ancestry-only `ours` merge joins the original `ce4160d` history. This does not change any tested code: its behavior is already represented by the replay. Both original main and upstream remain ancestors, allowing a conflict-free normal PR merge without force-pushing or rewriting main. Merge the PR with a merge commit, not squash/rebase, to retain this ancestry.
 - Deliberate bug fixes beyond replay: zero flame sends standby instead of negative-indexing the maximum step; threshold 254 handles raw 255 as the sole nonzero step without division by zero; explicit reconfigure threshold edits also update an existing overriding option.
 - Review follow-up: reproduced two real reloads after reconfiguring a loaded entry. Reconfigure now uses `async_update_and_abort`, leaving changed-entry reloads to the registered listener. Explicit scheduling preserves the old helper's behavior when no listener is registered (including unloaded entries) or input is unchanged. The options listener is retained. Checked the installed Core 2026.2.3 helper implementations and the official May 7, 2026 Home Assistant developer guidance, “Deprecating config entry listener with reloading methods in config flow.”
 - Reconfigure preserves upstream connection validation and duplicate prevention, updates a changed host-based unique ID, and checks older entries that have no unique ID. Upstream metadata/version/branding are retained rather than restoring Vincent's older manifest/HACS metadata.

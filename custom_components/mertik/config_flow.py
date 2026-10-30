@@ -98,7 +98,7 @@ class MertikConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # Loaded entries reload through their update listener. Preserve
                 # the helper's reload for unloaded entries and unchanged input.
                 reload_needed = not entry.update_listeners or not changed
-                result = self.async_update_and_abort(
+                self.hass.config_entries.async_update_entry(
                     entry,
                     unique_id=host,
                     data=data,
@@ -106,7 +106,7 @@ class MertikConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
                 if reload_needed:
                     self.hass.config_entries.async_schedule_reload(entry.entry_id)
-                return result
+                return self.async_abort(reason="reconfigure_successful")
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=_device_schema(entry.data, threshold),

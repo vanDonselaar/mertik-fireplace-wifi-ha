@@ -154,6 +154,9 @@ class Mertik:
         return self.flameHeight
 
     def set_flame_height(self, flame_height) -> None:
+        if flame_height == 0:
+            self.standBy()
+            return
         step_code = FLAME_HEIGHT_STEPS[flame_height - 1]
         self._send_command(f"{CMD_FLAME_PREFIX}{step_code}{CMD_FLAME_SUFFIX}")
         self.refresh_status()

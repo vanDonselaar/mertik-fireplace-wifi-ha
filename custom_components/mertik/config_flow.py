@@ -89,12 +89,24 @@ class MertikConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     options[CONF_FLAME_HEIGHT_THRESHOLD] = user_input[
                         CONF_FLAME_HEIGHT_THRESHOLD
                     ]
-                return self.async_update_reload_and_abort(
+                data = {**entry.data, **user_input}
+                changed = (
+                    entry.unique_id != host
+                    or entry.data != data
+                    or entry.options != options
+                )
+                # Loaded entries reload through their update listener. Preserve
+                # the helper's reload for unloaded entries and unchanged input.
+                reload_needed = not entry.update_listeners or not changed
+                result = self.async_update_and_abort(
                     entry,
                     unique_id=host,
-                    data={**entry.data, **user_input},
+                    data=data,
                     options=options,
                 )
+                if reload_needed:
+                    self.hass.config_entries.async_schedule_reload(entry.entry_id)
+                return result
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=_device_schema(entry.data, threshold),

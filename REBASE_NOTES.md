@@ -15,6 +15,7 @@ An actual 17-commit `git rebase --onto` was attempted first. The first commit pr
 - `ca8b14e`: consolidated feature replay and regression coverage.
 - Original intermediate UI fixes and reversions are represented by their final behavior, not separate rebased commits.
 - Deliberate bug fixes beyond replay: zero flame sends standby instead of negative-indexing the maximum step; threshold 254 handles raw 255 as the sole nonzero step without division by zero; explicit reconfigure threshold edits also update an existing overriding option.
+- Review follow-up: reproduced two real reloads after reconfiguring a loaded entry. Reconfigure now uses `async_update_and_abort`, leaving changed-entry reloads to the registered listener. Explicit scheduling preserves the old helper's behavior when no listener is registered (including unloaded entries) or input is unchanged. The options listener is retained. Checked the installed Core 2026.2.3 helper implementations and the official May 7, 2026 Home Assistant developer guidance, “Deprecating config entry listener with reloading methods in config flow.”
 - Reconfigure preserves upstream connection validation and duplicate prevention, updates a changed host-based unique ID, and checks older entries that have no unique ID. Upstream metadata/version/branding are retained rather than restoring Vincent's older manifest/HACS metadata.
 - Upstream optimistic-window coordinator API and its tests remain available. Vincent's main and pilot controls do **not** activate those windows: their state comes from reported status (including the igniting flag), not an optimistic flame-height cache.
 - There is exactly one immediate status query after a non-status command; Vincent's redundant second query after setting flame height is intentionally omitted.
@@ -48,12 +49,14 @@ Environment: isolated ignored `.venv`, CPython 3.13.18, Home Assistant 2026.2.3,
 
 - RED: zero-flame regression failed against upstream, demonstrating `16FF` (maximum) instead of `1600` (standby). It passed after the targeted fix.
 - RED: main ON/OFF and three-switch setup checks failed against upstream behavior before replay; calibration/raw-value, command-refresh, number-range and configuration/reload regressions were also exercised failing before their respective changes.
-- `.venv/bin/pytest -q`: **216 passed in 1.57s**.
-- `.venv/bin/pytest --disable-socket --allow-unix-socket -q`: **216 passed in 1.55s**. Network access disabled; Unix sockets allowed for the test event loop. Hardware sockets are mocked.
+- RED: real registered-listener reconfigure regression failed with `Expected async_reload to have been awaited once. Awaited 2 times.` before the fix (1 failed, 3 passed in 0.21s including loaded/unloaded and changed/unchanged cases).
+- `tests/test_config_reload.py` additionally exercises initial user-flow setup and two successive options edits through real setup/unload/reload, with hardware and platform boundaries mocked. All cases finish loaded with exactly one registered listener; changed settings reach device construction.
+- `.venv/bin/pytest -q`: **221 passed in 1.62s**.
+- `.venv/bin/pytest --disable-socket --allow-unix-socket -q`: **221 passed in 1.60s**. Network access disabled; Unix sockets allowed for the test event loop. Hardware sockets are mocked.
 - `.venv/bin/python -m compileall -q custom_components tests`: exit 0.
 - `git diff --check` and `git diff --check upstream/main`: exit 0.
 - `git diff --exit-code upstream/main -- .github/workflows`: exit 0.
-- Baseline-aware Ruff comparison: upstream 36 findings, result 32, **no new findings** by file/rule count. Existing unrelated lint findings were not broadly fixed. Added-line security scan found no secrets or unsafe execution patterns.
+- Original replay's baseline-aware Ruff comparison: upstream 36 findings, replay 32, **no new findings** by file/rule count. Ruff is not available on PATH for this follow-up. Existing unrelated lint findings were not broadly fixed. Follow-up added-line security scan found no secrets or unsafe execution patterns.
 
 Outdated upstream test expectations were deliberately updated for threshold 116, flame maximum 12, exposed minimum 0, three switches, Vincent's switch command semantics/icons, stored threshold default and the new final refresh command. Original command payload checks still assert the first command, while new tests assert the follow-up refresh and notification ordering.
 
